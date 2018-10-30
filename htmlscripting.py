@@ -26,6 +26,10 @@ htmlBeginning = """
 
 			<!-- text-translate: uppercase; -->
 		}
+		.description {
+			text-align: left;
+			margin-bottom: 0.3in;
+		}
   </style>
 
 </head>
