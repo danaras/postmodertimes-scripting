@@ -14,75 +14,85 @@ htmlBeginning = """
   <style>
 		body {
 			font-family: courier;
+			font-size: 10pt;
+
 		}
 		.TitleCard{
 			text-align: left;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 		.SpokenText{
 			text-align: center;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 
 		.Scene {
 			text-align: left;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 
 			<!-- text-translate: uppercase; -->
 		}
 		.Role {
 			text-align: center;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 		.Text {
 			text-align: left;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 		.fade_in {
 			text-align: left;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 		.cut_to {
 			text-align: right;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 		.dissolve_to {
 			text-align: right;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 		.close_on {
 			text-align: left;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
 		}
 		.pull_back {
 			text-align: right;
-			margin-bottom: 0.3in;
+			margin-bottom: 0.15in;
+		}
+		.Out {
+			text-align: right;
+			margin-bottom: 0.15in;
+		}
+		.Reveal {
+			margin-bottom: 0.15in;
 		}
 		pre{
 		margin: unset;
-		margin-bottom: 0.3in;
+		margin-bottom: 0.15in;
 		font-family: courier;
 		}
 
   </style>
-
 </head>
-
 <body>
 """
 
-Html_file= open("scriptTest.html","w")
+Html_file = open("final.html","w")
 Html_file.write(htmlBeginning)
 rightClasses = ['cut_to','dissolve_to']
 divTitleCardNonSpoken = '<div class="TitleCard">Title card (Clip %s): %s</div>'+'\n'
-divTitleCardSpoken = '<div><pre>Title card (Clip %s):		%s</pre></div>'+'\n'
+divTitleCardSpoken = '<div><pre>Title card (Clip %s):			%s</pre></div>'+'\n'
 divSpokenText = '<div class="SpokenText">%s</div>'+'\n'
-divEditCamera = '<div class="%s">%s (Clip %s):</div>'+'\n'
+divEditCameraIn = '<div class="%s">%s (Clip %s):</div>'+'\n'
+divEditCameraOut = '<div class="Out">%s</div>\n'
 divScene = '<div class="Scene">%s</div>\n'
 divText = '<div class="Text">%s</div>\n'
 divRole = '<div class="Role">%s</div>\n'
 divAllin = '<div class="Text">%s (Clip %s): %s</div>\n'
-with open('test.csv', mode='r') as csv_file:
+divReveal = '<div class="Reveal">Reveal: %s</div>\n'
+
+with open('final.csv', mode='r') as csv_file:
 	firstline = True
 	csv_reader = csv.reader(csv_file)
 	for row in csv_reader:
@@ -90,74 +100,94 @@ with open('test.csv', mode='r') as csv_file:
 			firstline = False
 			continue
 		info = list(row)
-		clipNo = info[3]
-		isItTitle = info[4]
-		editCamera = info[5]
-		scene = info[6]
-		role = info[7]
-		text = info[8]
+		clipNo = info[0]
+		isItTitle = info[3]
+		editCameraIn = info[4]
+		editCameraOut = info[6]
+		scene = info[8]
+		role = info[9]
+		dialogue = info[10]
+		text = info[11]
 		#first check if it is a title
-		if isItTitle.lower()=="title":
-			#check if it is not a spoken title
-			if role in (None, ""):
-				Html_file.write((divTitleCardNonSpoken %(clipNo,text)))
+		if clipNo:
+			if isItTitle.lower()=="title":
+				# print info
+				#check if it is not a spoken title
+				if role in (None, ""):
+					Html_file.write((divTitleCardNonSpoken %(clipNo,text)))
+				else:
+					Html_file.write((divTitleCardSpoken %(clipNo, role.upper())))
+
+					if dialogue:
+						if dialogue[0]!='"':
+							dialogue = '"'+dialogue
+						if dialogue[len(dialogue)-1]!='"':
+							dialogue = dialogue+'"'
+						Html_file.write((divSpokenText %(dialogue)))
+
+			#if it is not title we check if there is a non default camera/edit instructions
 			else:
-				if text[0]!='"':
-					text = '"'+text
-				if text[len(text)-1]!='"':
-					text = text+'"'
-				Html_file.write((divTitleCardSpoken %(clipNo,role.upper())))
-				Html_file.write((divSpokenText %(text)))
-		#if it is not title we check if there is a non default camera/edit instructions
-		else:
-			#if the edit/camera column empty, we assume it is CUT TO
-			if clipNo:
-				if editCamera in (None, ""):
-					editCamera = "CUT TO"
-				editCameraClass = editCamera.replace(" ","_").lower()
-				if editCameraClass in rightClasses:
-					Html_file.write((divEditCamera %(editCameraClass, editCamera.upper(), clipNo)))
+				# print isItTitle
+				#if the edit/camera column empty, we assume it is CUT TO
+				if editCameraIn in (None, ""):
+					editCameraIn = "CUT TO"
+				editCameraInClass = editCameraIn.replace(" ","_").lower()
+				if editCameraInClass in rightClasses:
+					Html_file.write((divEditCameraIn %(editCameraInClass, editCameraIn.upper(), clipNo)))
 					if scene not in (None, ""):
 						Html_file.write(divScene %(scene.upper()))
 					if role in (None,""):
 						Html_file.write(divText %(text))
 					else:
-						if text[0]!='"':
-							text = '"'+text
-						if text[len(text)-1]!='"':
-							text = text+'"'
-						Html_file.write((divTitleCardSpoken %(clipNo,role.upper())))
-						Html_file.write((divSpokenText %(text)))
+						Html_file.write((divRole %(role.upper())))
+						if dialogue:
+							if dialogue[0]!='"':
+								dialogue = '"'+dialogue
+							if dialogue[len(dialogue)-1]!='"':
+								dialogue = dialogue+'"'
+							Html_file.write((divSpokenText %(dialogue)))
 				else:
 					if scene in (None, ""):
-						Html_file.write((divAllin %(editCamera.upper(), clipNo, text)))
+						Html_file.write((divAllin %(editCameraIn.upper(), clipNo, text)))
 					else:
-						Html_file.write((divEditCamera %(editCameraClass, editCamera.upper(), clipNo)))
+						Html_file.write((divEditCameraIn %(editCameraInClass, editCameraIn.upper(), clipNo)))
 						Html_file.write(divScene %(scene.upper()))
 						if role in (None,""):
 							Html_file.write(divText %(text))
 						else:
-							if text[0]!='"':
-								text = '"'+text
-							if text[len(text)-1]!='"':
-								text = text+'"'
-							Html_file.write((divTitleCardSpoken %(clipNo,role.upper())))
-							Html_file.write((divSpokenText %(text)))
+							Html_file.write((divRole %(role.upper())))
+							if dialogue:
+								if dialogue[0]!='"':
+									dialogue = '"'+dialogue
+								if dialogue[len(dialogue)-1]!='"':
+									dialogue = dialogue+'"'
+								Html_file.write((divSpokenText %(dialogue)))
 
-
-
-
-
+		else:
+			if role:
+				Html_file.write((divRole %(role.upper())))
+				if dialogue:
+					if dialogue[0]!='"':
+						dialogue = '"'+dialogue
+					if dialogue[len(dialogue)-1]!='"':
+						dialogue = dialogue+'"'
+					Html_file.write((divSpokenText %(dialogue)))
 			else:
-				if role in (None,""):
-					Html_file.write(divText %(text))
+				if editCameraIn:
+					if editCameraIn.lower() == "reveal":
+						Html_file.write(divReveal %(text))
+					else:
+						print info
 				else:
-					if text[0]!='"':
-						text = '"'+text
-					if text[len(text)-1]!='"':
-						text = text+'"'
-					Html_file.write((divRole %(role.upper())))
-					Html_file.write((divSpokenText %(text)))
+					Html_file.write(divText %(text))
+
+
+		if editCameraOut not in (None,""):
+			# editCameraOutClass = editCameraOut.replace(" ","_").lower()
+
+			Html_file.write((divEditCameraOut %(editCameraOut.upper())))
+
+
 
 htmlEnd = """
 </body>
